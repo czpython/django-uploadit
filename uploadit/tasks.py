@@ -34,6 +34,7 @@ def upload_images(parent, datetimefield, tmpdir):
     else:
         job = group([task_upload_file.subtask((parent.pk, os.path.join(parenttmpdir, fil), ctype.id, fil)) for fil in files])
         result = job.apply_async()
+        result.save()
     return result
 
 class UploaditFileUpload(Task):
@@ -45,7 +46,7 @@ class UploaditFileUpload(Task):
         by django's TemporaryFileUploadHandler which gives the image a random name, so you will lose the original name.
     """
     name = "uploadit.tasks.upload_file"
-    ignore_result = True
+    ignore_result = False
 
     def run(self, pk, filepath, ctype_id, original=None):
         """
@@ -84,7 +85,6 @@ class UploaditFileProcess(Task):
         """
 
         logger = self.get_logger()
-
         try:
             image = ImageFile(open(filepath))
         except IOError:

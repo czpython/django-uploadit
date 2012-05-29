@@ -50,11 +50,9 @@ def upload_image(request):
                 parentpath = os.path.join(UPLOADIT_TEMP_FILES, foldername)
                 if not os.path.exists(parentpath):
                     os.mkdir(parentpath)
-                    task_process_file.apply_async(args=[parentpath, file_.temporary_file_path(), file_.name], countdown=0)
-                    #data["result"] = task.task_id
+                task_process_file.apply_async(args=[parentpath, file_.temporary_file_path(), file_.name], countdown=0)
             else:
                 task_upload_file.apply_async(args=[pk, file_.temporary_file_path(), ctype.id, file_.name], countdown=0)
-                #data["result"] = task.task_id
     else:
         data["error"] = {"code": 102, "message": "Failed to upload file."}
     response = simplejson.dumps(data)
