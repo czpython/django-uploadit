@@ -1,5 +1,4 @@
 import os
-import logging
 from datetime import datetime
 
 from django.core.files.images import ImageFile
@@ -7,31 +6,65 @@ from django.contrib.contenttypes.models import ContentType
 
 from celery import registry
 from celery.task import Task
+# Celery 2.5.x compatibility
+try:
+    from celery import group
+except ImportError:
+    from celery.task.sets import TaskSet as group
 
-from uploadit.utils import get_object_from_ctype
+from uploadit.utils import get_object_from_ctype, get_timestamp
 from uploadit.models import UploadedFile
 
+def upload_images(parent, datetimefield, tmpdir):
+    """
+        Main function, in charge of uploading all images as not tmp.
+        And saves the proper db objects.
+        This function NEEDS to be called to complete every upload batch.
+    """
+    ctype = ContentType.objects.get_for_model(parent)
+
+    tmpfoldername = get_timestamp(datetimefield) + parent.pk
+
+    parenttmpdir = os.path.join(tmpdir, tmpfoldername)
+    try:
+        files = os.listdir(parenttmpdir)
+    except OSError:
+        logging.error("Couldn't find parent tmp folder, tried %s" % parenttmpdir)
+        return
+    else:
+        job = group([task_upload_file.subtask((parent.pk, os.path.join(parenttmpdir, fil), ctype.id, fil)) for fil in files])
+        result = job.apply_async()
+    return result
 
 class UploaditFileUpload(Task):
+    """ This task is in charge of uploading the file to the proper location in media
+        and creating the db objects.
+        This task can be called by a single image upload( uploadit.views.upload_image ),
+        or a multiple image upload ( uploadit.utils.upload_images ).
+        Beware that if calling this task from uploadit.views.upload_image, the image is a tmp file created
+        by django's TemporaryFileUploadHandler which gives the image a random name, so you will lose the original name.
+    """
     name = "uploadit.tasks.upload_file"
     ignore_result = True
 
-    def run(self, pk, parenttmpdir, imgname, ctype_id):
+    def run(self, pk, filepath, ctype_id, original=None):
         """
-            pk - The pk of the parent object.
-            parenttmpdir - The path to the temporary parent object
+            pk - The primary key of the parent object.
+            filepath - Absolute path to tmp file.
+            ctype_id - Content Type Id of the parent model.
+            original - Original name of file.
         """
+        logger = self.get_logger()
 
-        # Absolute path
-        filepath = os.path.join(parenttmpdir, imgname)
         try:
             img = ImageFile(open(filepath, 'rb'))
         except IOError:
-            logging.error("Couldn't find file to upload, tried %s" % filepath)
+            logger.error("Couldn't find file to upload, tried %s" % filepath)
             return
         parent = get_object_from_ctype(ctype_id, pk)
+        original = original or img.name
         file_ = UploadedFile.objects.create(parent=parent)
-        file_.file.save(path, img, save=True)
+        file_.file.save(original, img, save=True)
         # Remove tmp file :)
         os.unlink(filepath)
         return
@@ -49,10 +82,13 @@ class UploaditFileProcess(Task):
             filepath - The path to the uploaded temporary image file.
             original - Original file name.
         """
+
+        logger = self.get_logger()
+
         try:
             image = ImageFile(open(filepath))
         except IOError:
-            logging.error("Can't find django created tmp file at %s" % filepath)
+            logger.error("Can't find django created tmp file at %s" % filepath)
             return
 
         tmpfilename = datetime.now().strftime("%Y%m%d%H%M%S%f") + original
@@ -62,7 +98,7 @@ class UploaditFileProcess(Task):
         try:
             tmp = open(tmpfile, 'w')
         except IOError:
-            logging.error("Can't create tmp file %s" % tmpfile)
+            logger.error("Can't create tmp file %s" % tmpfile)
             return
         for chunk in image.chunks():
             tmp.write(chunk)

@@ -1,5 +1,7 @@
-from django.contrib.contenttypes.models import ContentType
+import os
+import logging
 
+from django.contrib.contenttypes.models import ContentType
 
 
 def get_object_from_ctype(ctype_id, pk):
@@ -15,7 +17,7 @@ def get_ctype(request, path):
         ctype = ContentType.objects.get(id=ctype)
     except ContentType.DoesNotExist, ValueError:
         try:
-            ctype = ContentType.objects.get_by_natural_key(UPLOADIT_PARENT_CLASS.split('.'))
+            ctype = ContentType.objects.get_by_natural_key(*path.split('.'))
         except ContentType.DoesNotExist:
             ctype = None
 
