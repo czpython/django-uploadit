@@ -70,4 +70,4 @@ class UploaditFileProcess(Task):
         return
 
 task_upload_file = registry.tasks[UploaditFileUpload.name]
-task_process_file = registry.tasks[UploaditFileProces.name]
+task_process_file = registry.tasks[UploaditFileProcess.name]
