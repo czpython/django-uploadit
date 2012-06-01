@@ -26,10 +26,13 @@ def upload_images(parent, datetimefield, tmpdir):
     tmpfoldername = get_timestamp(datetimefield) + parent.pk
 
     parenttmpdir = os.path.join(tmpdir, tmpfoldername)
+
+    logger = self.get_logger()
+
     try:
         files = os.listdir(parenttmpdir)
     except OSError:
-        logging.error("Couldn't find parent tmp folder, tried %s" % parenttmpdir)
+        logger.error("Couldn't find parent tmp folder, tried %s" % parenttmpdir)
         return
     else:
         job = group([task_upload_file.subtask((parent.pk, os.path.join(parenttmpdir, fil), ctype.id, fil)) for fil in files])

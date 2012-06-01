@@ -21,7 +21,6 @@ UPLOADIT_PARENT_DATETIME = settings.UPLOADIT_PARENT_DATETIME
 def upload_image(request):
     # Force django to save all files to disk as temporary
     request.upload_handlers.insert(0, TemporaryFileUploadHandler())
-    print "RUNNNING"
     # Json response
     data = {"jsonrpc" : "2.0", "id" : "id"}
 
