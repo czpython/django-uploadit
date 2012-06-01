@@ -27,7 +27,7 @@ def upload_images(parent, datetimefield, tmpdir):
 
     parenttmpdir = os.path.join(tmpdir, tmpfoldername)
 
-    logger = self.get_logger()
+    logger = Task.get_logger()
 
     try:
         files = os.listdir(parenttmpdir)
