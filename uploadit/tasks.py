@@ -3,6 +3,7 @@ from datetime import datetime
 
 from django.core.files.images import ImageFile
 from django.contrib.contenttypes.models import ContentType
+from django.conf import settings
 
 from celery import registry
 from celery.task import Task
@@ -14,6 +15,9 @@ except ImportError:
 
 from uploadit.utils import get_object_from_ctype, get_timestamp
 from uploadit.models import UploadedFile
+
+
+SEPARATOR = settings.SECRET_KEY
 
 def upload_images(parent, datetimefield, tmpdir):
     """
@@ -39,6 +43,7 @@ def upload_images(parent, datetimefield, tmpdir):
         result = job.apply_async()
         result.save()
     return result
+
 
 class UploaditFileUpload(Task):
     """ This task is in charge of uploading the file to the proper location in media
@@ -68,6 +73,7 @@ class UploaditFileUpload(Task):
         parent = get_object_from_ctype(ctype_id, pk)
         original = original or img.name
         file_ = UploadedFile.objects.create(parent=parent)
+        original = original.split(SECRET_KEY)[1]
         file_.file.save(original, img, save=True)
         # Remove tmp file :)
         os.unlink(filepath)
@@ -94,10 +100,10 @@ class UploaditFileProcess(Task):
             logger.error("Can't find django created tmp file at %s" % filepath)
             return
 
-        tmpfilename = datetime.now().strftime("%Y%m%d%H%M%S%f") + original
+        tmpfilename = datetime.now().strftime("%Y%m%d%H%M%S%f") + SECRET_KEY + original
         # Path to temporary image file, unfortunately i have no way of getting the extension 
         # of the file. So the temp files are being saved without an extension.
-        tmpfile = os.path.join(parentpath, tmpfilename)
+        tmpfile = os.path.join(parentpath, tmpfilename) 
         try:
             tmp = open(tmpfile, 'w')
         except IOError:

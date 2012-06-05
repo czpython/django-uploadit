@@ -40,7 +40,7 @@ def upload_image(request):
             # pk needs to be Primary Key value. Because of the generic fk field.
             parent = ctype.get_object_for_this_type(pk=pk)
         except ctype.model_class().DoesNotExist:
-            data["error"] = {"code": 102, "message": 
+            data["error"] = {"code": 102, "message":
                                 "Failed to upload file. %s object with pk %s Doesn't exist." % (ctype.model_class().__class__.__name__, pk)}
         else:
             if direct == '0':
