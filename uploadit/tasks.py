@@ -73,7 +73,7 @@ class UploaditFileUpload(Task):
         parent = get_object_from_ctype(ctype_id, pk)
         original = original or img.name
         file_ = UploadedFile.objects.create(parent=parent)
-        original = original.split(SECRET_KEY)[1]
+        original = original.split(SEPARATOR)[1]
         file_.file.save(original, img, save=True)
         # Remove tmp file :)
         os.unlink(filepath)
@@ -100,7 +100,7 @@ class UploaditFileProcess(Task):
             logger.error("Can't find django created tmp file at %s" % filepath)
             return
 
-        tmpfilename = datetime.now().strftime("%Y%m%d%H%M%S%f") + SECRET_KEY + original
+        tmpfilename = datetime.now().strftime("%Y%m%d%H%M%S%f") + SEPARATOR + original
         # Path to temporary image file, unfortunately i have no way of getting the extension 
         # of the file. So the temp files are being saved without an extension.
         tmpfile = os.path.join(parentpath, tmpfilename) 
