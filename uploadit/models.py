@@ -2,6 +2,12 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
+try:
+    # This setting allows third party apps to change the order the files are retrieved.
+    UPLOADIT_OBJECTS_ORDERING = settings.UPLOADIT_OBJECTS_ORDERING
+except AttributeError:
+    UPLOADIT_OBJECTS_ORDERING = ['id',]
+
 
 def calc_file_path(instance, name):
     folder = instance.parent.pk
@@ -20,3 +26,6 @@ class UploadedFile(models.Model):
 
     def __unicode__(self):
         return "%s - %s" %(self.file.name, str(self.parent))
+
+    class Meta:
+        ordering = UPLOADIT_OBJECTS_ORDERING
