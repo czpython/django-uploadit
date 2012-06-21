@@ -6,8 +6,8 @@ from django.utils import simplejson
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.uploadhandler import TemporaryFileUploadHandler
-from django.conf import settings
 
+from uploadit.conf import settings
 from uploadit.tasks import task_upload_file, task_process_file
 from uploadit.utils import get_ctype, get_timestamp
 

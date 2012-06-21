@@ -3,7 +3,6 @@ from datetime import datetime
 
 from django.core.files.images import ImageFile
 from django.contrib.contenttypes.models import ContentType
-from django.conf import settings
 
 from celery import registry
 from celery.task import Task
@@ -15,11 +14,14 @@ except ImportError:
 
 from uploadit.utils import get_object_from_ctype, get_timestamp
 from uploadit.models import UploadedFile
+from uploadit.conf import settings
 
 
-SEPARATOR = settings.SECRET_KEY
+SEPARATOR = settings.UPLOADIT_SEPARATOR
+TMPDIR = settings.UPLOADIT_TEMP_FILES
 
-def upload_images(parent, datetimefield, tmpdir):
+
+def upload_images(parent, datetimefield, tmpdir=TMPDIR):
     """
         Main function, in charge of uploading all images as not tmp.
         And saves the proper db objects.
