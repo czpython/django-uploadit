@@ -1,16 +1,31 @@
+import mimetypes
+
 from django.db import models
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes import generic
 
 from uploadit.conf import settings
 from uploadit.managers import FileManager
 
-UPLOADIT_OBJECTS_ORDERING = settings.UPLOADIT_OBJECTS_ORDERING
-
 
 def calc_file_path(instance, name):
-    folder = instance.parent.pk
-    return "%s/%s" % (folder, name)
+    if not instance.group is None:
+        return "%s/%s" % (instance.group.identifier, name)
+    return "uploaded-files/%s" % name
+
+
+class FileGroup(models.Model):
+    """
+        A group of files.
+        Usefull for Image Galleries.
+    """
+
+    identifier = models.CharField(max_length=200, unique=True)
+
+
+    def __unicode__(self):
+        return self.identifier
+
+    def get_files(self):
+        return self.files.get_custom_sorted()
 
 
 class UploadedFile(models.Model):
@@ -18,14 +33,30 @@ class UploadedFile(models.Model):
         Represents an uploaded file in the db.
     """
 
-    file = models.ImageField(upload_to=calc_file_path)
-    parent_type = models.ForeignKey(ContentType)
-    parent_id = models.CharField(max_length=100)
-    parent = generic.GenericForeignKey('parent_type', 'parent_id')
+    file = models.FileField(upload_to=calc_file_path)
+    content_type = models.CharField(editable=False, max_length=100)
+    upload_date = models.DateTimeField(auto_now_add=True)
+    group =  models.ForeignKey(FileGroup, null=True, blank=True, related_name="files")
     objects = FileManager()
 
-    def __unicode__(self):
-        return "%s - %s" %(self.file.name, str(self.parent))
-
     class Meta:
-        ordering = UPLOADIT_OBJECTS_ORDERING
+        ordering = settings.UPLOADIT_OBJECTS_ORDERING
+
+
+    def is_image(self):
+        if self.content_type == "image":
+            return True
+        else:
+            return False
+
+    def save(self, *args, **kwargs):
+        (mime_type, encoding) = mimetypes.guess_type(self.file.url)
+        try:
+            self.content_type = mime_type.split("/")[0]
+        except:
+            self.content_type = "text"
+        super(UploadedFile, self).save(*args, **kwargs)
+
+    def __unicode__(self):
+        return self.file.name
+

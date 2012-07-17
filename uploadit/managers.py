@@ -2,15 +2,27 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 
 from uploadit.conf import settings
-
+from uploadit.utils import callable_from_string
 
 class FileManager(models.Manager):
-    def ordered(self, parent):
-        parent_type = ContentType.objects.get_for_model(parent.__class__)
-        qs = self.get_query_set().filter(parent_type=parent_type.id, parent_id=parent.pk)
-        ordering = settings.get_ordering()
+
+    use_for_related_fields = True
+
+    def get_custom_sorted(self, **kwargs):
+        """
+            Checks for a callable custom sorting.
+            And returns its result.
+            This does not necessarily return a queryset. It can return any type,
+            it all depends on the return value of the custom sorting. In my case
+            I had to implement natural sorting and could not find a way of doing it
+            with a queryset so had to return a list.
+        """
+        qs = self.get_query_set().filter(**kwargs)
+        ordering = callable_from_string(settings.UPLOADIT_FILE_SORTING)
         if callable(ordering):
-            results = ordering(qs)
-        else:
-            results = qs.filter(*settings.UPLOADIT_OBJECTS_ORDERING)
-        return results
+            customsorted = ordering(qs)
+            return customsorted
+        return qs
+
+    def get_custom_sorted_from_group(self, group, **kwargs):
+        return self.get_custom_sorted(group__identifier__exact=group, **kwargs)
