@@ -9,3 +9,6 @@ UPLOADIT_FILE_SORTING = getattr(settings, 'UPLOADIT_FILE_SORTING', None)
 # Path to the directory where all temporary files will be uploaded to.
 # The reason for this settings is because I don't use Django's TemporaryFileUploadHandler
 UPLOADIT_TEMP_DIR = getattr(settings, 'UPLOADIT_TEMP_DIR', None) or getattr(settings, 'FILE_UPLOAD_TEMP_DIR', None) or settings.PROJECT_ROOT
+
+UPLOADIT_FILE_MODEL = getattr(settings, 'UPLOADIT_FILE_MODEL', 'uploadit.defaults.DefaultUploadedFile')
+UPLOADIT_PROCESS_FILE = getattr(settings, 'UPLOADIT_PROCESS_FILE', 'uploadit.models.process_file')

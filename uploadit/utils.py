@@ -1,5 +1,6 @@
 
 
+
 def callable_from_string(string_or_callable):
     """
         Thanks to https://github.com/mbi/django-simple-captcha/blob/master/captcha/conf/settings.py#L31

@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.contenttypes.models import ContentType
 
 from uploadit.conf import settings
 from uploadit.utils import callable_from_string
@@ -23,6 +22,3 @@ class FileManager(models.Manager):
             customsorted = ordering(qs)
             return customsorted
         return qs
-
-    def get_custom_sorted_from_group(self, group, **kwargs):
-        return self.get_custom_sorted(group__identifier__exact=group, **kwargs)

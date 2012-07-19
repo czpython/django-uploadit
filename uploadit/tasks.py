@@ -1,11 +1,15 @@
 from os import unlink as delete_file
 
-from django.core.files import File
-
 from celery.task import Task
 from celery import registry, group
 
-from uploadit.models import FileGroup, UploadedFile
+from uploadit.utils import callable_from_string
+from uploadit.conf import settings
+from uploadit.models import UploadedFile
+
+
+
+UPLOADIT_PROCESS_FILE = callable_from_string(settings.UPLOADIT_PROCESS_FILE)
 
 
 class UploaditFileUpload(Task):
@@ -17,26 +21,25 @@ class UploaditFileUpload(Task):
         by django's TemporaryFileUploadHandler which gives the image a random name, so you will lose the original name.
     """
     name = "uploadit.tasks.upload_file"
-    ignore_result = False
+    ignore_result = True
 
-    def run(self, filepath, filename, filecount=None, group=None):
+    def run(self, **kwargs):
         """
             @filepath: Path to the temporary uploaded file.
             @filename - Original name of the file.
-            @group - Unique group name, to use for grouping this file.
         """
         logger = self.get_logger()
 
+        # Before we go any further, first verify that the file actually exists.
+        filepath = kwargs.get('filepath')
         try:
-            file_ = File(open(filepath), name=filename)
+            with open(filepath) as f: pass
         except IOError:
             logger.error("Couldn't find file to upload, tried %s" % filepath)
             return None
-        uploaded_file = UploadedFile(file=file_)
-        if group:
-            fgroup = FileGroup.objects.get_or_create(identifier=group, defaults={})[0]
-            fgroup.files.add(uploaded_file)
-         # Remove tmp file :)
+        else:
+            UPLOADIT_PROCESS_FILE(**kwargs)
+        # Remove tmp file :)
         delete_file(filepath)
         return
 
