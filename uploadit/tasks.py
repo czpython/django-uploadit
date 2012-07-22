@@ -23,7 +23,7 @@ class UploaditFileUpload(Task):
     name = "uploadit.tasks.upload_file"
     ignore_result = True
 
-    def run(self, filepath, filename, kwargs):
+    def run(self, **kwargs):
         """
             @filepath: Path to the temporary uploaded file.
             @filename - Original name of the file.
@@ -31,13 +31,13 @@ class UploaditFileUpload(Task):
         logger = self.get_logger()
 
         # Before we go any further, first verify that the file actually exists.
+        filepath = kwargs.get('filepath')
         try:
             with open(filepath) as f: pass
         except IOError:
             logger.error("Couldn't find file to upload, tried %s" % filepath)
             return None
         else:
-            kwargs.update({'filepath': filepath, 'filename': filename}, countdown=0)
             UPLOADIT_PROCESS_FILE(**kwargs)
         # Remove tmp file :)
         delete_file(filepath)
