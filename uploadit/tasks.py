@@ -23,7 +23,7 @@ class UploaditFileUpload(Task):
     name = "uploadit.tasks.upload_file"
     ignore_result = True
 
-    def run(self, filepath, filename, **kwargs):
+    def run(self, filepath, filename, kwargs):
         """
             @filepath: Path to the temporary uploaded file.
             @filename - Original name of the file.

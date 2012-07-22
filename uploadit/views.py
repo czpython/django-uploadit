@@ -26,7 +26,7 @@ def upload_image(request):
         for name, file_ in files.iteritems():
             path = file_.file_path()
             # I don't use dynamic kwargs because there's some odd error :(
-            task = task_upload_file.apply_async(args=[path, file_.name], kwargs=params)
+            task = task_upload_file.delay(filepath=path, filename=file_.name, kwargs=params)
             data['%s_task_id' % name] = task.id
     else:
         data["error"] = {"code": 102, "message": "No File was received."}
