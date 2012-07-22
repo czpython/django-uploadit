@@ -11,6 +11,7 @@ setup(
     url="http://github.com/czpython/django-uploadit",
     packages=['uploadit'],
     install_requires=[
+        'celery==3.0.1',
         'django-celery',
     ],
 )
